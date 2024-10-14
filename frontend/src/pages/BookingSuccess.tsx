@@ -1,8 +1,7 @@
 // src/pages/BookingSuccess.tsx
 
-import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import successImage from "../assets/bill.jpg"; // Adjust the path based on your folder structure
+// Adjust the path based on your folder structure
 
 const BookingSuccess = () => {
   const location = useLocation();
