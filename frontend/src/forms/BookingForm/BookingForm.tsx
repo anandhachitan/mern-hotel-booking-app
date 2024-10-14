@@ -6,10 +6,11 @@ import {
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { StripeCardElement } from "@stripe/stripe-js";
 import { useSearchContext } from "../../contexts/SearchContext";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom"; // import useNavigate for navigation
 import { useMutation } from "react-query";
 import * as apiClient from "../../api-client";
 import { useAppContext } from "../../contexts/AppContext";
+import { useState } from "react";
 
 type Props = {
   currentUser: UserType;
@@ -32,11 +33,12 @@ export type BookingFormData = {
 const BookingForm = ({ currentUser, paymentIntent }: Props) => {
   const stripe = useStripe();
   const elements = useElements();
-
   const search = useSearchContext();
   const { hotelId } = useParams();
-
   const { showToast } = useAppContext();
+  const navigate = useNavigate(); // Initialize navigate
+
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   const { mutate: bookRoom, isLoading } = useMutation(
     apiClient.createRoomBooking,
@@ -67,16 +69,44 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
 
   const onSubmit = async (formData: BookingFormData) => {
     if (!stripe || !elements) {
+      showToast({ message: "Stripe has not loaded", type: "ERROR" });
       return;
     }
-    const result = await stripe.confirmCardPayment(paymentIntent.clientSecret, {
-      payment_method: {
-        card: elements.getElement(CardElement) as StripeCardElement,
-      },
-    });
 
-    if (result.paymentIntent?.status === "succeeded") {
-      bookRoom({ ...formData, paymentIntentId: result.paymentIntent.id });
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      showToast({ message: "Card details are missing", type: "ERROR" });
+      return;
+    }
+
+    try {
+      setPaymentLoading(true);
+
+      const result = await stripe.confirmCardPayment(
+        paymentIntent.clientSecret,
+        {
+          payment_method: {
+            card: cardElement as StripeCardElement,
+          },
+        }
+      );
+
+      if (result.error) {
+        showToast({
+          message: result.error.message || "Payment failed",
+          type: "ERROR",
+        });
+      } else if (result.paymentIntent?.status === "succeeded") {
+        bookRoom({ ...formData, paymentIntentId: result.paymentIntent.id });
+        // Navigate to the success page after booking
+        navigate("/booking-success", {
+          state: { amountPaid: paymentIntent.totalCost }, // Pass amount paid to success page
+        });
+      }
+    } catch (error) {
+      showToast({ message: "Payment error occurred", type: "ERROR" });
+    } finally {
+      setPaymentLoading(false);
     }
   };
 
@@ -85,7 +115,7 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
       onSubmit={handleSubmit(onSubmit)}
       className="grid grid-cols-1 gap-5 rounded-lg border border-slate-300 p-5"
     >
-      <span className="text-3xl font-bold">Confirm You Details</span>
+      <span className="text-3xl font-bold">Confirm Your Details</span>
       <div className="grid grid-cols-2 gap-6">
         <label className="text-gray-700 text-sm font-bold flex-1">
           First Name
@@ -118,13 +148,14 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
           />
         </label>
       </div>
+
       <div className="space-y-2">
         <h2 className="text-xl font-semibold">Your Price Summary</h2>
         <div className="bg-blue-200 p-4 rounded-md">
           <div className="font-semibold text-lg">
             Total Cost: ₹{paymentIntent.totalCost.toFixed(2)}
           </div>
-          <div className="text-xs">Include taxes and charges</div>
+          <div className="text-xs">Includes taxes and charges</div>
         </div>
       </div>
 
@@ -135,13 +166,40 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
           className="border rounded-md p-2 text-sm"
         />
       </div>
+
       <div className="flex justify-end">
         <button
-          disabled={isLoading}
+          disabled={isLoading || paymentLoading}
           type="submit"
           className="bg-[#222831] text-white p-2 font-bold hover:bg-[#414b59] text-md disabled:bg-gray-500"
         >
-          {isLoading ? "Saving..." : "Confirm Booking"}
+          {paymentLoading ? (
+            <span className="flex items-center">
+              <svg
+                className="animate-spin h-5 w-5 mr-2 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8z"
+                ></path>
+              </svg>
+              Processing...
+            </span>
+          ) : (
+            "Confirm Booking"
+          )}
         </button>
       </div>
     </form>

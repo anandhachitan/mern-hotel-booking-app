@@ -16,6 +16,7 @@ import Details from "./pages/Details";
 import Booking from "./pages/Booking";
 import MyBookings from "./pages/MyBookings";
 import Home from "./pages/Home";
+import BookingSuccess from "./pages/BookingSuccess";
 
 const App = () => {
   const { isLoggedIn } = useAppContext();
@@ -106,6 +107,7 @@ const App = () => {
                 </Layout>
               }
             />
+            <Route path="/booking-success" element={<BookingSuccess />} />
           </>
         )}
 

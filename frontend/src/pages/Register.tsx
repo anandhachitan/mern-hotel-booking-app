@@ -83,7 +83,7 @@ const Register = () => {
             required: "This field is required ",
             minLength: {
               value: 6,
-              message: "password must be at least 6 character",
+              message: "Password must be at least 6 characters",
             },
           })}
         ></input>
@@ -101,7 +101,7 @@ const Register = () => {
               if (!val) {
                 return "This field is required";
               } else if (watch("password") !== val) {
-                return "Your password do not match";
+                return "Your passwords do not match";
               }
             },
           })}

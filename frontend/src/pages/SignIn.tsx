@@ -9,6 +9,7 @@ export type SignInFormData = {
   email: string;
   password: string;
 };
+
 const SignIn = () => {
   const { showToast } = useAppContext();
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const SignIn = () => {
 
   const mutation = useMutation(apiClient.signIn, {
     onSuccess: async () => {
-      showToast({ message: "Sign in Successfull!", type: "SUCCESS" });
+      showToast({ message: "Sign in Successful!", type: "SUCCESS" });
       await queryClient.invalidateQueries("validateToken");
       navigate(location.state?.from?.pathname || "/");
     },
@@ -46,7 +47,7 @@ const SignIn = () => {
           type="email"
           className="border rounded w-full py-1 px-2 font-normal"
           {...register("email", { required: "This field is required " })}
-        ></input>
+        />
         {errors.email && (
           <span className="text-red-500">{errors.email.message}</span>
         )}
@@ -60,10 +61,10 @@ const SignIn = () => {
             required: "This field is required ",
             minLength: {
               value: 6,
-              message: "password must be at least 6 character",
+              message: "Password must be at least 6 characters",
             },
           })}
-        ></input>
+        />
         {errors.password && (
           <span className="text-red-500">{errors.password.message}</span>
         )}
@@ -77,7 +78,7 @@ const SignIn = () => {
         </span>
         <button
           type="submit"
-          className="bg-[#1A4D2E] text-white p-2 font-bold hover:bg-[#1A4D2E] text-xl"
+          className="bg-[#222831] text-white p-2 font-bold hover:bg-[#414b59] text-xl"
         >
           Login
         </button>
